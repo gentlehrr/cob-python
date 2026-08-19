@@ -14,10 +14,11 @@ import os
 import sys
 import time
 from typing import List, Optional
+from urllib.parse import quote
 
 import requests
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 _BASE = os.environ.get("COB_API_URL", "https://api.cob.farm")
 
@@ -263,6 +264,21 @@ class Silo:
                 raise Timeout(f"silo {self.id} not complete after {timeout}s "
                               f"(currently {st}, {pct}%)")
             time.sleep(poll)
+
+    # -- delete --
+    def delete_document(self, filename: str) -> "Silo":
+        """Delete one document from the silo. The silo walks through
+        'processing' while chunks and vectors are removed and the corpus
+        rebuilds; chain .wait() to block until it completes. Upload
+        credits are not refunded. Raises SiloBusy if ingestion or another
+        deletion is in flight, NotFound if the file is not in this silo.
+
+            silo.delete_document("old_contract.pdf").wait()
+        """
+        self._client._req(
+            "DELETE",
+            f"/v2/silos/{self.id}/documents/{quote(filename, safe='')}")
+        return self
 
     # -- ask --
     def ask(self, query: str, conversation_id: Optional[str] = None) -> Answer:
