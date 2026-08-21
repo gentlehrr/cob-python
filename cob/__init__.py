@@ -18,7 +18,7 @@ from urllib.parse import quote
 
 import requests
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 _BASE = os.environ.get("COB_API_URL", "https://api.cob.farm")
 
@@ -264,6 +264,15 @@ class Silo:
                 raise Timeout(f"silo {self.id} not complete after {timeout}s "
                               f"(currently {st}, {pct}%)")
             time.sleep(poll)
+
+    # -- documents --
+    def documents(self) -> list:
+        """List the silo's documents. Returns a list of dicts:
+        [{"filename": "report.pdf", "size_bytes": 123456}, ...]
+        Only your original uploads are listed; the pipeline's internal
+        derivative files are never shown."""
+        d = self._client._req("GET", f"/v2/silos/{self.id}/documents")
+        return d.get("documents", [])
 
     # -- delete --
     def delete_document(self, filename: str) -> "Silo":
